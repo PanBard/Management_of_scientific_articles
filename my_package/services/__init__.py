@@ -1,5 +1,5 @@
 from .directory_management import DirectoryManager
-from .json_management import JSONManager
+from .data_management import DataManager
 from .total_change import TotalChange
 
-__all__ = ['DirectoryManager', 'JSONManager', 'TotalChange']
+__all__ = ['DirectoryManager', 'DataManager', 'TotalChange']

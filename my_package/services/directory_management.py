@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 from natsort import natsorted
 import tarfile
 import shutil
@@ -6,116 +6,113 @@ import shutil
 class DirectoryManager:
 
     def __init__(self):
-        self.current_working_directory = os.getcwd()
-        self.main_working_folder = os.path.join(self.current_working_directory, "main_working_folder")
-        self.input_folder_path= os.path.join(self.main_working_folder, "input_folders")
-        self.output_folders_path = os.path.join(self.main_working_folder, "output_folders")
-        self.temp_folder_path = os.path.join(self.main_working_folder, "temp_folders")
-        self.json_inside_tar_name = 'wpd.json'
 
-        self.input_pdf = "input_pdf"
-        self.input_ris = "input_ris"
-        self.input_graph = "input_graph"
+        self.main_working_folder = "main_working_folder"
+        self.main_working_folder_path = Path("main_working_folder")
+
+        # -------------------------------------- input
+        self.input_folder = "input_folders"
+        self.input_folder_path = self.main_working_folder_path / self.input_folder
+
+        self.input_graph_folder = "input_graph"
+        self.input_graph_folder_path  = self.input_folder_path / self.input_graph_folder
+
+        self.input_data_folder = "input_data"
+        self.input_data_folder_path  = self.input_folder_path / self.input_data_folder
+        # self.input_pdf_folder = "input_pdf"
+        # self.input_pdf_folder_path = self.input_folder_path / self.input_pdf_folder
+        # self.input_ris_folder = "input_ris"
+        # self.input_ris_folder_path = self.input_folder_path / self.input_ris_folder
         self.input_sample_features = "input_sample_features"
+        self.input_sample_features_path = self.input_folder_path / self.input_sample_features
+         # -------------------------------------- input
 
-        self.output_pdf = "output_pdf"
+        #---------------------------------------- output
         self.output_folders = "output_folders"
-        self.output_excel = "output_excel"
-        self.output_json = "output_json"
+        self.output_folders_path = self.main_working_folder_path / self.output_folders
 
+        # self.output_pdf = "output_pdf"
+        # self.output_pdf_path = self.output_folders_path / self.output_pdf
+        # self.output_excel = "output_excel"
+        # self.output_excel_path = self.output_folders_path / self.output_excel
+        # self.output_json = "output_json"
+        # self.output_json_path = self.output_folders_path / self.output_json
+        self.output_csv = "output_csv"
+        self.output_csv_path = self.output_folders_path / self.output_csv
+
+        self.output_csv_file_name = 'all_data.csv'
+        #---------------------------------------- output
+
+        self.temp_folder = "temp_folders"
+        self.temp_folder_path = self.main_working_folder_path / self.temp_folder
         self.temp_tar_files = "tar_files"
+        self.temp_tar_files_path  = self.temp_folder_path / self.temp_tar_files
 
-        self.input_pdf_path = self.made_path(self.input_pdf, self.input_folder_path)
-        self.input_ris_path  = self.made_path(self.input_ris, self.input_folder_path)
-        self.input_graph_path  = self.made_path(self.input_graph, self.input_folder_path)
-        self.input_sample_features_path  = self.made_path(self.input_sample_features, self.input_folder_path)
-
-        self.output_pdf_path  = self.made_path(self.output_pdf, self.output_folders_path)
-        self.output_folder_path  = self.made_path(self.output_folders, self.output_folders_path)
-        self.output_excel_path  = self.made_path(self.output_excel, self.output_folders_path)
-        self.output_json_path  = self.made_path(self.output_json, self.output_folders_path)
-
-        self.temp_tar_files_path  = self.made_path(self.temp_tar_files, self.temp_folder_path)
-
-
-        self.check_if_exist_and_made_directory(self.input_pdf_path)
-        self.check_if_exist_and_made_directory(self.input_ris_path)
-        self.check_if_exist_and_made_directory(self.input_graph_path)
-        self.check_if_exist_and_made_directory(self.input_sample_features_path)
-
-        self.check_if_exist_and_made_directory(self.output_pdf_path)
-        self.check_if_exist_and_made_directory(self.output_folder_path)
-        self.check_if_exist_and_made_directory(self.output_excel_path)
-        self.check_if_exist_and_made_directory(self.output_json_path)
-
-        self.check_if_exist_and_made_directory(self.temp_folder_path)
-        self.check_if_exist_and_made_directory(self.temp_tar_files_path)
-
+        
+        self.make_folder_enviroment()
         self.extract_tar_file()
-        # ----------
-        elos = self.copy_bmp_files_to_temp_folders()
-        print(f'Number of bmp files: {len(elos)}')
-        # ----------
-
-        self.sprawdzawrka()
-
-    def check_if_exist_and_made_directory(self,folder_path):
-        if not os.path.isdir(folder_path):      # Check if the directory exists
-            os.makedirs(folder_path)# Create the directory
-            print(f"Directory '{folder_path}' created.")
 
 
-    def made_path(self,folder_name, main_path):
-        new_path = os.path.join(main_path, folder_name)
-        return new_path
+    def make_directory(self,directory_path:Path):
+        try:
+            directory_path.mkdir()
+            print(f"Directory '{directory_path}' created successfully.")
+        except FileExistsError:
+            # print(f"Directory '{directory_path}' already exists.")
+            return
+        except PermissionError:
+            print(f"Permission denied: Unable to create '{directory_path}'.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
 
-    def get_files_inside_folder(self,folder_path):
-        entries = os.listdir(folder_path)
-        sorted_files = natsorted(entries)
+    def get_only_files_names_inside_folder(self,directory_path: Path):
+        files = [file.stem for file in directory_path.iterdir() if file.is_file()]
+        sorted_files = natsorted(files)
         return sorted_files
     
-    def get_path_of_files_inside_folder(self,folder_path):
-        entries = os.listdir(folder_path)
-        file_paths = [ os.path.join(folder_path, entry) for entry in entries ]
-        sorted_file_paths = natsorted(file_paths)
-        return sorted_file_paths
-    
+    def get_files_names_and_extensions_inside_folder(self,directory_path: Path):
+        files = [(file.stem, file.suffix) for file in directory_path.iterdir() if file.is_file()]
+        sorted_files = natsorted(files)
+        return sorted_files
+
+    def get_only_directory_names_inside_folder(self,directory_path: Path):
+        directory_names = [entry.name for entry in directory_path.iterdir() if entry.is_dir()]
+        sorted_directories = natsorted(directory_names)
+        return sorted_directories
+
     def extract_tar_file(self):
-        tar_files = self.get_only_tar_files()
-        print(f"Number of tar files: {len(tar_files)}")
-
-        for tar_file in tar_files:
-            tar_file_path = os.path.join(self.input_graph_path, tar_file)
-            file_name_without_extension = tar_file.replace('.tar', '')
-            path_inside_tar_file = os.path.join(file_name_without_extension, self.json_inside_tar_name )
-            # print(path_inside_tar_file)
-            with tarfile.open(tar_file_path, 'r') as tf: # Open the tar file          
-                # tf.extract(path_inside_tar_file, path=self.temp_tar_files_path)# Extract the specific file to a temporary location
-                tf.extractall( path=self.temp_tar_files_path)# Extract the specific file to a temporary location
-
-    def get_only_tar_files(self):
-        entries = self.get_files_inside_folder(self.input_graph_path)
-        tar_files = [entry for entry in entries if entry.endswith('.tar')]
-        sorted_tar_files = natsorted(tar_files)
-        return sorted_tar_files
+        data_folders = self.get_only_directory_names_inside_folder(self.input_data_folder_path)
+        for data_folder in data_folders:
+            data_folder_path = self.input_data_folder_path / data_folder
+            tar_files_paths = list(data_folder_path.glob('*.tar'))
+            for tar_path in tar_files_paths:
+                with tarfile.open(tar_path, 'r') as tf: # Open the tar file  
+                    tf.extractall( path=self.temp_tar_files_path)
+                
+    def get_files_paths_inside_folder(self, path):
+        files_paths = list(path.glob('*.*'))
+        return files_paths
     
+    def get_files_paths_inside_folder_by_extension(self, path, extension):
+        files_paths = list(path.glob(f'*.{extension}'))
+        return files_paths
 
-    def copy_bmp_files_to_temp_folders(self):
-        entries = self.get_files_inside_folder(self.input_graph_path)
-        source_bmp_files = [entry for entry in entries if entry.endswith('.bmp')]
-        sorted_source_bmp_files = natsorted(source_bmp_files)
-        # destination_bmp_files = 
-        return sorted_source_bmp_files
-    
-    def sprawdzawrka(self):
-        bpm = self.copy_bmp_files_to_temp_folders()
-        tar = self.get_only_tar_files()
+    def make_folder_enviroment(self):
+        self.make_directory(self.main_working_folder_path)
+        self.make_directory(self.input_folder_path)
+        self.make_directory(self.input_data_folder_path)
+        self.make_directory(self.input_sample_features_path)
+        self.make_directory(self.output_folders_path)
+        # self.make_directory(self.output_pdf_path)
+        # self.make_directory(self.output_excel_path)
+        # self.make_directory(self.output_json_path)
+        self.make_directory(self.temp_folder_path)
+        self.make_directory(self.temp_tar_files_path)
+        self.make_directory(self.output_csv_path)
 
-        for i in range(len(bpm)):
-            print(bpm[i])
-            print(tar[i])
-            print("------------------------------------------")
-
-
-
-
+    def delete_non_empty_directory(self, directory_path):
+        try:
+            shutil.rmtree(directory_path)
+            print(f"The directory {directory_path} has been deleted.")
+        except OSError as e:
+            print(f"Error: {e.strerror}")
